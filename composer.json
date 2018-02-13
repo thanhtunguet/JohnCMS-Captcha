@@ -1,0 +1,34 @@
+{
+  "name": "thanhtunguet/johncms-captcha",
+  "description": "JohnCMS_Captcha package.",
+  "keywords": [
+    "johncms",
+    "captcha"
+  ],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Thanh Tùng Phạm",
+      "email": "thanhtung.uet@gmail.com"
+    }
+  ],
+  "type": "composer",
+  "require": {
+    "php": ">=5.4"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "5.4.*"
+  },
+  "autoload": {
+    "psr-4": {
+      "thanhtunguet\\": "./JohnCMS_Captcha"
+    }
+  },
+  "extra": {
+    "branch-alias": {
+      "dev-master": "1.0-dev"
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
+}
