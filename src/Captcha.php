@@ -1,151 +1,97 @@
 <?php
 
-namespace thanhtunguet {
+namespace uet\JohnCMS {
 
     use Closure;
     use ReflectionClass;
+    use ReflectionException;
 
-    /**
-     * @package     JohnCMS
-     * @link        http://johncms.com
-     * @copyright   Copyright (C) 2008-2011 JohnCMS Community
-     * @license     LICENSE.txt (see attached file)
-     * @version     VERSION.txt (see attached file)
-     * @author      http://johncms.com/about
-     *
-     * Данный модуль построен на основе алгоритма и кода KCAPTCHA v.1.2.6
-     * KCAPTCHA PROJECT, Copyright by Kruglov Sergei, 2006, 2007, 2008
-     * www.captcha.ru, www.kruglov.ru
-     *
-     * This class is published by JohnCMS
-     * and used under GNU GPL license for this project
-     */
-    class JohnCMS_Captcha
+    class Captcha
     {
-
         /**
          * Hash Algorithm Constants
          */
-
-        const HASH_ALGO_NONE = 0;
-        const HASH_ALGO_MD5 = 1;
-        const HASH_ALGO_SHA1 = 2;
-        const HASH_ALGO_MIXED_MD5_SHA1 = 12;
-        const HASH_ALGO_MIXED_SHA1_MD5 = 21;
-
-        /**
-         * The image resource
-         * @var object|resource
-         */
-
-        protected $image;
+        const MD5_HASHING = 10;
+        const SHA1_HASHING = 11;
+        const MIXED_MD5_SHA1 = 1011;
+        const MIXED_SHA1_MD5 = 1110;
+        const REVERSE_KEY = -10;
+        const NONE = 0;
 
         /**
-         * Captcha credits
-         * The bottom text of captcha
-         *
-         * @var string
+         * @var resource $image
          */
-
-        protected $credits;
+        protected $image = NULL;
 
         /**
-         * JPEG Quality
-         *
-         * @var integer
+         * @var string $credits
          */
-
-        protected $jpeg_quality;
+        protected $credits = 'JohnCMS';
 
         /**
-         * Captcha key_string
-         * @var string
+         * @var integer $jpegQuality
          */
-
-        protected $key_string;
+        protected $jpegQuality = 98;
 
         /**
-         * Path of directory that contains fonts
-         *
-         * @var string
+         * @var string $fontsDirectory
          */
-
-        protected $fonts_dir;
+        protected $fontsDirectory = '';
+        /**
+         * @var string $keyString
+         */
+        protected $keyString = '';
 
         /**
-         * Class constructor
-         * @throws \ReflectionException
+         * Captcha constructor.
          */
-
         public function __construct()
         {
-            $this->image = null;
-            $this->key_string = '';
-            $this->set_jpeg_quality(98);
-
-            $reflection = new ReflectionClass('thanhtunguet\JohnCMS_Captcha');
-            $dirname = dirname($reflection->getFileName());
-
-            $this->set_fonts_dir("{$dirname}/fonts");
+            $fontsDirectory = $this->getFontsDirectoryPath();
+            $this->setFontsDirectory($fontsDirectory);
         }
 
         /**
-         * Set jpeg quality in output
-         *
-         * @param int $jpeg_quality
+         * Get the real path of fonts directory
          */
-
-        public function set_jpeg_quality($jpeg_quality = 98)
+        protected function getFontsDirectoryPath()
         {
-            $this->jpeg_quality = $jpeg_quality;
+            $reflectionClass = NULL;
+
+            try {
+                $reflectionClass = new ReflectionClass(self::class);
+            } catch (ReflectionException $exception) {
+                die($exception->getMessage());
+            }
+
+            $filename = $reflectionClass->getFileName();
+            $filepath = dirname($filename);
+            $fontsDirectory = $filepath . '/../fonts';
+            return realpath($fontsDirectory);
         }
 
         /**
-         * Set fonts dir
-         *
-         * @param string $fonts_dir
+         * @param bool $return
+         * @return null|resource
          */
-
-        public function set_fonts_dir($fonts_dir = '')
+        public function create($return = FALSE)
         {
-            $this->fonts_dir = $fonts_dir;
-        }
-
-        /**
-         * Set captcha credit
-         *
-         * @param string $credits
-         */
-
-        public function set_credits($credits = '')
-        {
-            $this->credits = $credits;
-        }
-
-        /**
-         * Generates key_string and image
-         *
-         * @return void
-         */
-
-        public function create_captcha()
-        {
-            ////////////////////////////////////////////////////////////
-            // Настройки CAPTCHA                                      //
-            ////////////////////////////////////////////////////////////
             $alphabet = '0123456789abcdefghijklmnopqrstuvwxyz';
-            // Just use hexadecimal characters
             $allowed_symbols = '0123456789abcdef';
 
             $length = mt_rand(6, 8);
-            $width = ($length - 5) * 10 + 100;
+
+            $width = 120;
             $height = 50;
+
             $fluctuation_amplitude = 5;
-            $no_spaces = true;
+
+            $no_spaces = TRUE;
+
             if ($this->credits) {
-                $show_credits = True;
+                $show_credits = TRUE;
             } else {
-                $show_credits = False;
+                $show_credits = FALSE;
             }
 
             $credits = $this->credits;
@@ -165,12 +111,12 @@ namespace thanhtunguet {
             ////////////////////////////////////////////////////////////
             $fonts = array();
 
-            $fonts_dir_absolute = $this->fonts_dir;
+            $fontDir_absolute = $this->fontsDirectory;
 
-            if (($handle = opendir($fonts_dir_absolute)) !== false) {
-                while (false !== ($file = readdir($handle))) {
+            if (($handle = opendir($fontDir_absolute)) !== FALSE) {
+                while (FALSE !== ($file = readdir($handle))) {
                     if (preg_match('/\.png$/i', $file)) {
-                        $fonts[] = $fonts_dir_absolute . '/' . $file;
+                        $fonts[] = $fontDir_absolute . '/' . $file;
                     }
                 }
                 closedir($handle);
@@ -179,46 +125,46 @@ namespace thanhtunguet {
             $alphabet_length = strlen($alphabet);
 
             do {
-                // generating random key_string
-                while (true) {
-                    $this->key_string = '';
+                // generating random keyString
+                while (TRUE) {
+                    $this->keyString = '';
                     for ($i = 0; $i < $length; $i++) {
-                        $this->key_string .= $allowed_symbols{mt_rand(0, strlen($allowed_symbols) - 1)};
+                        $this->keyString .= $allowed_symbols{mt_rand(0, strlen($allowed_symbols) - 1)};
                     }
-                    if (!preg_match('/cp|cb|ck|c6|c9|rn|rm|mm|co|do|cl|db|qp|qb|dp|ww/', $this->key_string))
+                    if (!preg_match('/cp|cb|ck|c6|c9|rn|rm|mm|co|do|cl|db|qp|qb|dp|ww/', $this->keyString))
                         break;
                 }
                 $font_file = $fonts[mt_rand(0, count($fonts) - 1)];
                 $font = imagecreatefrompng($font_file);
-                imagealphablending($font, true);
+                imageAlphaBlending($font, TRUE);
                 $fontfile_width = imagesx($font);
                 $fontfile_height = imagesy($font) - 1;
                 $font_metrics = array();
                 $symbol = 0;
-                $reading_symbol = false;
+                $reading_symbol = FALSE;
                 // loading font
                 for ($i = 0; $i < $fontfile_width && $symbol < $alphabet_length; $i++) {
                     $transparent = (imagecolorat($font, $i, 0) >> 24) == 127;
                     if (!$reading_symbol && !$transparent) {
                         $font_metrics[$alphabet{$symbol}] = array('start' => $i);
-                        $reading_symbol = true;
+                        $reading_symbol = TRUE;
                         continue;
                     }
                     if ($reading_symbol && $transparent) {
                         $font_metrics[$alphabet{$symbol}]['end'] = $i;
-                        $reading_symbol = false;
+                        $reading_symbol = FALSE;
                         $symbol++;
                         continue;
                     }
                 }
-                $img = imagecreatetruecolor($width, $height);
-                imagealphablending($img, true);
-                $white = imagecolorallocate($img, 255, 255, 255);
-                imagefilledrectangle($img, 0, 0, $width - 1, $height - 1, $white);
+                $img = imageCreateTrueColor($width, $height);
+                imageAlphaBlending($img, TRUE);
+                $white = imageColorAllocate($img, 255, 255, 255);
+                imageFilledRectangle($img, 0, 0, $width - 1, $height - 1, $white);
                 // draw text
                 $x = 1;
                 for ($i = 0; $i < $length; $i++) {
-                    $m = $font_metrics[$this->key_string{$i}];
+                    $m = $font_metrics[$this->keyString{$i}];
                     $y = mt_rand(-$fluctuation_amplitude, $fluctuation_amplitude) + ($height - $fontfile_height) / 2 + 2;
                     if ($no_spaces) {
                         $shift = 0;
@@ -259,11 +205,11 @@ namespace thanhtunguet {
             } while ($x >= $width - 10); // while not fit in canvas
             $center = $x / 2;
             // credits. To remove, see configuration file
-            $this->image = imagecreatetruecolor($width, $height + ($show_credits ? 12 : 0));
-            $foreground = imagecolorallocate($this->image, $foreground_color[0], $foreground_color[1], $foreground_color[2]);
-            $background = imagecolorallocate($this->image, $background_color[0], $background_color[1], $background_color[2]);
-            imagefilledrectangle($this->image, 0, 0, $width - 1, $height - 1, $background);
-            imagefilledrectangle($this->image, 0, $height, $width - 1, $height + 12, $foreground);
+            $this->image = imageCreateTrueColor($width, $height + ($show_credits ? 12 : 0));
+            $foreground = imageColorAllocate($this->image, $foreground_color[0], $foreground_color[1], $foreground_color[2]);
+            $background = imageColorAllocate($this->image, $background_color[0], $background_color[1], $background_color[2]);
+            imageFilledRectangle($this->image, 0, 0, $width - 1, $height - 1, $background);
+            imageFilledRectangle($this->image, 0, $height, $width - 1, $height + 12, $foreground);
             $credits = empty($credits) ? $_SERVER['HTTP_HOST'] : $credits;
             imagestring($this->image, 2, $width / 2 - imagefontwidth(2) * strlen($credits) / 2, $height - 2, $credits, $background);
             // periods
@@ -283,75 +229,91 @@ namespace thanhtunguet {
             //wave distortion
             for ($x = 0; $x < $width; $x++) {
                 for ($y = 0; $y < $height; $y++) {
+
                     $sx = $x + (sin($x * $rand1 + $rand5) + sin($y * $rand3 + $rand6)) * $rand9 - $width / 2 + $center + 1;
                     $sy = $y + (sin($x * $rand2 + $rand7) + sin($y * $rand4 + $rand8)) * $rand10;
+
                     if ($sx < 0 || $sy < 0 || $sx >= $width - 1 || $sy >= $height - 1) {
                         continue;
                     } else {
+
                         $color = imagecolorat($img, $sx, $sy) & 0xFF;
                         $color_x = imagecolorat($img, $sx + 1, $sy) & 0xFF;
                         $color_y = imagecolorat($img, $sx, $sy + 1) & 0xFF;
                         $color_xy = imagecolorat($img, $sx + 1, $sy + 1) & 0xFF;
                     }
+
                     if ($color == 255 && $color_x == 255 && $color_y == 255 && $color_xy == 255) {
                         continue;
+
                     } else if ($color == 0 && $color_x == 0 && $color_y == 0 && $color_xy == 0) {
-                        $newred = $foreground_color[0];
-                        $newgreen = $foreground_color[1];
-                        $newblue = $foreground_color[2];
+                        $newRed = $foreground_color[0];
+                        $newGreen = $foreground_color[1];
+                        $newBlue = $foreground_color[2];
+
                     } else {
                         $frsx = $sx - floor($sx);
                         $frsy = $sy - floor($sy);
                         $frsx1 = 1 - $frsx;
                         $frsy1 = 1 - $frsy;
 
-                        $newcolor = ($color * $frsx1 * $frsy1 + $color_x * $frsx * $frsy1 + $color_y * $frsx1 * $frsy + $color_xy * $frsx * $frsy);
-                        if ($newcolor > 255)
-                            $newcolor = 255;
-                        $newcolor = $newcolor / 255;
-                        $newcolor0 = 1 - $newcolor;
-                        $newred = $newcolor0 * $foreground_color[0] + $newcolor * $background_color[0];
-                        $newgreen = $newcolor0 * $foreground_color[1] + $newcolor * $background_color[1];
-                        $newblue = $newcolor0 * $foreground_color[2] + $newcolor * $background_color[2];
+                        $newColor = ($color * $frsx1 * $frsy1 + $color_x * $frsx * $frsy1 + $color_y * $frsx1 * $frsy + $color_xy * $frsx * $frsy);
+                        if ($newColor > 255)
+                            $newColor = 255;
+                        $newColor = $newColor / 255;
+                        $newColor0 = 1 - $newColor;
+                        $newRed = $newColor0 * $foreground_color[0] + $newColor * $background_color[0];
+                        $newGreen = $newColor0 * $foreground_color[1] + $newColor * $background_color[1];
+                        $newBlue = $newColor0 * $foreground_color[2] + $newColor * $background_color[2];
                     }
-                    imagesetpixel($this->image, $x, $y, imagecolorallocate($this->image, $newred, $newgreen, $newblue));
+                    imagesetpixel($this->image, $x, $y, imageColorAllocate($this->image, $newRed, $newGreen, $newBlue));
                 }
             }
+
+            return ($return ? $this->image : NULL);
         }
 
         /**
-         * Get key_string after hashing by an algorithm
+         * Get keyString after hashing or reversing
          *
-         * @param   integer
+         * @param   integer $hashing
          * @return  string
          */
-
-        public function get_key_string($hash_algo = JohnCMS_Captcha::HASH_ALGO_MD5)
+        public function getKeyString($hashing = self::NONE)
         {
+            $keyString = $this->keyString;
 
-            switch ($hash_algo) {
+            switch ($hashing) {
 
-                case JohnCMS_Captcha::HASH_ALGO_SHA1:
-                    return sha1($this->key_string);
+                case self::MD5_HASHING:
+                    $keyString = md5($keyString);
                     break;
 
-                case JohnCMS_Captcha::HASH_ALGO_MIXED_MD5_SHA1:
-                    return md5(sha1($this->key_string));
+                case self::SHA1_HASHING:
+                    $keyString = sha1($keyString);
                     break;
 
-                case JohnCMS_Captcha::HASH_ALGO_MIXED_SHA1_MD5:
-                    return sha1(md5($this->key_string));
+                case self::MIXED_MD5_SHA1:
+                    $keyString = sha1($keyString);
+                    $keyString = md5($keyString);
                     break;
 
-                case JohnCMS_Captcha::HASH_ALGO_NONE:
-                    return $this->key_string;
+                case self::MIXED_SHA1_MD5:
+                    $keyString = md5($keyString);
+                    $keyString = sha1($keyString);
                     break;
 
-                case JohnCMS_Captcha::HASH_ALGO_MD5:
+                case self::REVERSE_KEY:
+                    $keyString = strrev($keyString);
+                    break;
+
+                case self::NONE:
                 default:
-                    return md5($this->key_string);
+
                     break;
             }
+
+            return $keyString;
         }
 
         /**
@@ -359,52 +321,116 @@ namespace thanhtunguet {
          *
          * @param int $type
          */
-
         public function output($type = IMAGETYPE_PNG)
         {
             ob_start();
+
             header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
             header('Cache-Control: no-store, no-cache, must-revalidate');
             header('Cache-Control: post-check=0, pre-check=0', FALSE);
             header('Pragma: no-cache');
+
             // Output file by image type
             switch ($type) {
+
                 case IMAGETYPE_PNG:
                     imagePng($this->image);
                     break;
+
                 case IMAGETYPE_GIF:
                     imageGif($this->image);
                     break;
+
                 case IMAGETYPE_JPEG:
                 default:
-                    imageJpeg($this->image, null, $this->jpeg_quality);
+                    imageJpeg($this->image, null, $this->jpegQuality);
                     break;
             }
+
             // Set MIME Type for Image
             $mime_type = image_type_to_mime_type($type);
             header("Content-Type: {$mime_type}");
+
             // Set the output filename
             $filename = md5($_SERVER['REQUEST_TIME']);
-            $filename .= image_type_to_extension($type, True);
+            $filename = substr($filename, 5, 10);
+            $filename .= image_type_to_extension($type, TRUE);
+
             // Set Content-Disposition
             header("Content-Disposition: inline; filename={$filename}");
-            // File size
+
+            // Send file size in Header
             $length = ob_get_length();
             header("Content-Length: {$length}");
-            // Flush image data
+
             ob_end_flush();
         }
 
         /**
-         * Pass image to an external handler
+         * @return resource
+         */
+        public function getImage()
+        {
+            return $this->image;
+        }
+
+        /**
+         * @return string
+         */
+        public function getCredits()
+        {
+            return $this->credits;
+        }
+
+        /**
+         * @param string $credits
+         */
+        public function setCredits($credits)
+        {
+            $this->credits = $credits;
+        }
+
+        /**
+         * @return int
+         */
+        public function getJpegQuality()
+        {
+            return $this->jpegQuality;
+        }
+
+        /**
+         * @param int $jpegQuality
+         */
+        public function setJpegQuality($jpegQuality)
+        {
+            $this->jpegQuality = $jpegQuality;
+        }
+
+        /**
+         * @return string
+         */
+        public function getFontsDirectory()
+        {
+            return $this->fontsDirectory;
+        }
+
+        /**
+         * @param string $fontsDirectory
+         */
+        public function setFontsDirectory($fontsDirectory)
+        {
+            $this->fontsDirectory = $fontsDirectory;
+        }
+
+        /**
+         * Pass as argument of Closure handler
          *
-         * @param Closure $handler
+         * @param Closure $closure
          * @return mixed
          */
-
-        public function result(Closure $handler)
+        public function closure(Closure $closure)
         {
-            return $handler($this->image);
+            return $closure($this->image);
         }
     }
 }

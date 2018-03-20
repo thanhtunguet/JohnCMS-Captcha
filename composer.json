@@ -1,6 +1,6 @@
 {
-  "name": "thanhtunguet/johncms-captcha",
-  "description": "JohnCMS_Captcha package.",
+  "name": "uet/johncms-captcha",
+  "description": "JohnCMS Captcha",
   "keywords": [
     "johncms",
     "captcha"
@@ -16,12 +16,10 @@
   "require": {
     "php": ">=5.4"
   },
-  "require-dev": {
-    "phpunit/phpunit": "5.4.*"
-  },
+  "require-dev": {},
   "autoload": {
     "psr-4": {
-      "thanhtunguet\\": "./JohnCMS_Captcha"
+      "uet\\JohnCMS\\": "src/"
     }
   },
   "extra": {
